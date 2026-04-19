@@ -308,7 +308,8 @@ class SettingsTab(QWidget):
             self.airllm_path_hint.setText(f"Pasta usada para import: {resolved}")
         else:
             self.airllm_path_hint.setText(
-                "Não foi encontrada uma subpasta airllm aqui. Verifique o caminho ou use a pasta site-packages."
+                "Não foi encontrada a pasta airllm aqui. Use a pasta site-packages do venv, ou a raiz do venv. "
+                "Se usou pip install -e, escolha o mesmo site-packages (o app lê arquivos .pth)."
             )
 
     def _check_system_requirements(self):
@@ -320,7 +321,12 @@ class SettingsTab(QWidget):
         if requirements["airllm_installed"]:
             status_parts.append("✅ AirLLM instalado")
         else:
-            status_parts.append("❌ AirLLM não instalado (pip install airllm)")
+            status_parts.append("❌ Não foi possível importar o pacote airllm")
+            err = requirements.get("airllm_import_error")
+            if err:
+                status_parts.append(f"   Erro: {err}")
+            else:
+                status_parts.append("   Dica: pip install airllm no mesmo Python do app, ou ajuste a pasta em “Pasta do AirLLM”.")
         
         if requirements["torch_installed"]:
             status_parts.append("✅ PyTorch instalado")

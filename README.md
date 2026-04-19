@@ -166,6 +166,10 @@ python -c "import site; print(site.getsitepackages())"
 
 A opção **Limpar** remove o caminho extra e volta a usar apenas o `sys.path` padrão do processo que executa o aplicativo.
 
+**Instalação em modo editável** (`pip install -e caminho/do/repo`): o código do `airllm` pode não ficar como pasta dentro de `site-packages`, e sim em outro diretório referenciado por um arquivo **`.pth`** nessa pasta. O interpretador só lê `.pth` na subida do Python; este app passa a ler esses arquivos manualmente ao configurar o caminho. Por isso, mesmo com instalação `-e`, indique a pasta **`site-packages`** correta do ambiente — não basta apontar só para a pasta `airllm` do código-fonte, se o import depender do layout do pip.
+
+Se ainda falhar, use **Verificar Requisitos do Sistema**: a mensagem mostra o **erro exato** do `import` (dependência faltando, DLL, etc.), não só “não instalado”.
+
 ## 🤝 Contribuição
 
 Contribuições são bem-vindas! Abra uma issue ou pull request.

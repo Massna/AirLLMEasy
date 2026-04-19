@@ -6,7 +6,7 @@ import platform
 from typing import Optional, Callable, Generator, List, Dict
 from pathlib import Path
 
-from ..utils.airllm_import import ensure_airllm_path
+from ..utils.airllm_import import ensure_airllm_path, try_import_airllm
 
 
 class AirLLMBackend:
@@ -377,18 +377,16 @@ class AirLLMBackend:
         """Verifica requisitos do sistema para AirLLM."""
         result = {
             "airllm_installed": False,
+            "airllm_import_error": None,
             "torch_installed": False,
             "cuda_available": False,
             "gpu_name": None,
             "gpu_memory": None
         }
 
-        ensure_airllm_path()
-        try:
-            import airllm
-            result["airllm_installed"] = True
-        except ImportError:
-            pass
+        ok, err = try_import_airllm()
+        result["airllm_installed"] = ok
+        result["airllm_import_error"] = err
         
         try:
             import torch

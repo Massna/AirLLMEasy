@@ -3,7 +3,7 @@ from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QTextEdit, QPlainTextEdit, QComboBox, QGroupBox, QSplitter,
     QFrame, QSpinBox, QDoubleSpinBox, QMessageBox, QRadioButton,
-    QButtonGroup
+    QButtonGroup, QListWidget, QListWidgetItem, QDialog, QDialogButtonBox
 )
 from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QFont, QTextCursor
@@ -62,22 +62,124 @@ class LoadModelWorker(QThread):
     progress = Signal(str)
     finished = Signal(bool, str)
     
-    def __init__(self, airllm: AirLLMBackend, model_path: str, compression: str):
+    def __init__(self, airllm: AirLLMBackend, model_path: str, compression: str, model_type: str = "huggingface"):
         super().__init__()
         self.airllm = airllm
         self.model_path = model_path
         self.compression = compression
+        self.model_type = model_type
     
     def run(self):
         success = self.airllm.load_model(
             self.model_path,
             progress_callback=lambda s: self.progress.emit(s),
-            compression=self.compression
+            compression=self.compression,
+            model_type=self.model_type
         )
         if success:
             self.finished.emit(True, "Modelo carregado!")
         else:
             self.finished.emit(False, "Falha ao carregar modelo")
+
+
+class ModelSelectorDialog(QDialog):
+    """Diálogo para selecionar modelo para AirLLM."""
+    
+    def __init__(self, airllm: AirLLMBackend, parent=None):
+        super().__init__(parent)
+        self.airllm = airllm
+        self.selected_model = None
+        self.selected_type = None
+        
+        self.setWindowTitle("Selecionar Modelo para AirLLM")
+        self.setMinimumSize(500, 400)
+        self._setup_ui()
+        self._load_models()
+    
+    def _setup_ui(self):
+        layout = QVBoxLayout(self)
+        
+        # Instruções
+        info_label = QLabel(
+            "Selecione um modelo baixado pelo Ollama ou LMStudio para executar com AirLLM:"
+        )
+        info_label.setWordWrap(True)
+        layout.addWidget(info_label)
+        
+        # Lista de modelos
+        self.model_list = QListWidget()
+        self.model_list.itemDoubleClicked.connect(self.accept)
+        layout.addWidget(self.model_list)
+        
+        # Ou digitar manualmente
+        layout.addWidget(QLabel("Ou digite um modelo do HuggingFace:"))
+        self.hf_input = QComboBox()
+        self.hf_input.setEditable(True)
+        # Adiciona modelos populares
+        for model in AirLLMBackend.get_supported_models():
+            self.hf_input.addItem(f"{model['name']} ({model['size']})", model['name'])
+        layout.addWidget(self.hf_input)
+        
+        # Botões
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        )
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+    
+    def _load_models(self):
+        """Carrega lista de modelos disponíveis."""
+        self.model_list.clear()
+        
+        # Modelos do Ollama
+        ollama_models = self.airllm.list_ollama_models()
+        if ollama_models:
+            header = QListWidgetItem("📦 Modelos Ollama:")
+            header.setFlags(Qt.NoItemFlags)
+            self.model_list.addItem(header)
+            
+            for model in ollama_models:
+                item = QListWidgetItem(f"  🦙 {model['name']}")
+                item.setData(Qt.UserRole, model)
+                self.model_list.addItem(item)
+        
+        # Modelos do LMStudio (GGUF)
+        lmstudio_models = self.airllm.list_lmstudio_models()
+        if lmstudio_models:
+            header = QListWidgetItem("📦 Modelos LMStudio (GGUF):")
+            header.setFlags(Qt.NoItemFlags)
+            self.model_list.addItem(header)
+            
+            for model in lmstudio_models:
+                size_mb = model.get('size', 0) / (1024*1024)
+                item = QListWidgetItem(f"  📄 {model['name']} ({size_mb:.0f} MB)")
+                item.setData(Qt.UserRole, model)
+                self.model_list.addItem(item)
+        
+        if not ollama_models and not lmstudio_models:
+            item = QListWidgetItem("Nenhum modelo local encontrado")
+            item.setFlags(Qt.NoItemFlags)
+            self.model_list.addItem(item)
+    
+    def get_selection(self):
+        """Retorna o modelo selecionado e seu tipo."""
+        # Verifica se selecionou da lista
+        current = self.model_list.currentItem()
+        if current:
+            model_data = current.data(Qt.UserRole)
+            if model_data:
+                return model_data.get('path', model_data.get('name')), model_data.get('type', 'huggingface')
+        
+        # Verifica se digitou manualmente
+        hf_text = self.hf_input.currentText().strip()
+        if hf_text:
+            # Remove o tamanho se presente
+            if " (" in hf_text:
+                hf_text = hf_text.split(" (")[0]
+            return hf_text, "huggingface"
+        
+        return None, None
 
 
 class ChatTab(QWidget):
@@ -271,21 +373,15 @@ class ChatTab(QWidget):
     
     def _load_airllm_model(self):
         """Carrega um modelo no AirLLM."""
-        # Lista modelos suportados
-        models = AirLLMBackend.get_supported_models()
+        # Mostra diálogo de seleção de modelo
+        dialog = ModelSelectorDialog(self.airllm, self)
         
-        from PySide6.QtWidgets import QInputDialog
-        
-        items = [f"{m['name']} - {m['description']} ({m['size']})" for m in models]
-        item, ok = QInputDialog.getItem(
-            self, "Carregar Modelo",
-            "Selecione um modelo para carregar:\n(Ou digite o caminho/ID do HuggingFace)",
-            items, 0, True
-        )
-        
-        if ok and item:
-            # Extrai o nome do modelo
-            model_path = item.split(" - ")[0] if " - " in item else item
+        if dialog.exec() == QDialog.Accepted:
+            model_path, model_type = dialog.get_selection()
+            
+            if not model_path:
+                QMessageBox.warning(self, "Aviso", "Nenhum modelo selecionado!")
+                return
             
             self.load_model_btn.setEnabled(False)
             self.status_label.setText(f"Carregando {model_path}...")
@@ -293,7 +389,8 @@ class ChatTab(QWidget):
             self.load_worker = LoadModelWorker(
                 self.airllm,
                 model_path,
-                self.config.airllm_compression
+                self.config.airllm_compression,
+                model_type
             )
             self.load_worker.progress.connect(lambda s: self.status_label.setText(s))
             self.load_worker.finished.connect(self._on_model_loaded)

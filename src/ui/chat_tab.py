@@ -334,14 +334,14 @@ class WorkspacePanel(QFrame):
 class ChatTab(QWidget):
     """Chat tab with AI models — premium design with file operations."""
 
-    def __init__(self, config: Config, ollama_backend, lmstudio_backend, airllm_backend, extension_mgr):
+    def __init__(self, config: Config, extension_mgr):
         super().__init__()
         self.config = config
 
         # Backends
-        self.ollama = ollama_backend
-        self.lmstudio = lmstudio_backend
-        self.airllm = airllm_backend
+        self.ollama = OllamaBackend(config.ollama_url)
+        self.lmstudio = LMStudioBackend(config.lmstudio_url)
+        self.airllm = AirLLMBackend(config)
 
         # Workspace manager for file operations
         self.workspace_mgr = WorkspaceManager(config.workspace_folders)

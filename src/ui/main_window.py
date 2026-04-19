@@ -515,7 +515,7 @@ class MainWindow(QMainWindow):
         self.tab_widget.addTab(self.download_tab, "Download")
 
         # Chat Tab
-        self.chat_tab = ChatTab(self.config)
+        self.chat_tab = ChatTab(self.config, self.extension_mgr)
         self.tab_widget.addTab(self.chat_tab, "Chat")
 
         # Settings Tab

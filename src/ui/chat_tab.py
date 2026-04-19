@@ -304,17 +304,22 @@ class WorkspacePanel(QFrame):
 
     def _load_folders(self):
         self.folder_list.clear()
-        import os
+        from pathlib import Path
+        
+        # Ensure manager is in sync by clearing and rebuilding
+        self.workspace_mgr.clear_folders()
+        
         for folder in self.config.workspace_folders:
-            self.workspace_mgr.add_folder(folder)
-            # Show short name
-            parts = folder.replace("\\", "/").split("/")
-            short = "/".join(parts[-2:]) if len(parts) > 2 else folder
-            icon = "📄" if os.path.isfile(folder) else "📂"
-            item = QListWidgetItem(f"{icon} {short}")
-            item.setData(Qt.UserRole, folder)
-            item.setToolTip(folder)
-            self.folder_list.addItem(item)
+            if self.workspace_mgr.add_folder(folder):
+                p = Path(folder)
+                # Show short name
+                parts = folder.replace("\\", "/").split("/")
+                short = "/".join(parts[-2:]) if len(parts) > 2 else folder
+                icon = "📄" if p.is_file() else "📂"
+                item = QListWidgetItem(f"{icon} {short}")
+                item.setData(Qt.UserRole, folder)
+                item.setToolTip(folder)
+                self.folder_list.addItem(item)
 
     def _add_folder(self):
         folder = QFileDialog.getExistingDirectory(self, "Select workspace folder")
@@ -933,7 +938,7 @@ class ChatTab(QWidget):
         self.config.workspace_folders = session_data.get("workspaces", [])
         self.config.save()
         
-        self.workspace_mgr._allowed_folders = set(self.config.workspace_folders)
+        # Logic to refresh workspace panel will rebuild the manager state
         self.workspace_panel._load_folders()
         self._refresh_chat_display()
         

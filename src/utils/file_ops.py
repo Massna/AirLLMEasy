@@ -47,6 +47,10 @@ class WorkspaceManager:
             return True
         return False
 
+    def clear_folders(self):
+        """Clear all allowed folders/files."""
+        self._allowed_folders = []
+
     @property
     def allowed_folders(self) -> List[str]:
         return [str(f) for f in self._allowed_folders]

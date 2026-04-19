@@ -16,20 +16,44 @@ Aplicação desktop para gerenciar e executar modelos de IA localmente.
 
 ## 🔧 Backends Suportados
 
-### Opção A - Ollama
+### Opção A - Ollama (Download)
 - Download direto do registro Ollama
-- Execução nativa otimizada
 - Modelos: Llama, Mistral, CodeLlama, Phi, etc.
+- Pode executar diretamente OU carregar no AirLLM
 
-### Opção B - LMStudio
+### Opção B - LMStudio (Download)
 - Download de arquivos GGUF do HuggingFace
-- Interface API compatível com OpenAI
 - Ótimo para modelos quantizados
+- Pode executar diretamente OU carregar no AirLLM
 
-### AirLLM (Execução)
-- Executa modelos grandes em hardware limitado
-- Suporta compressão 4-bit e 8-bit
+### 🚀 AirLLM (Execução)
+- **Executa modelos baixados pelo Ollama ou LMStudio**
+- Suporta modelos GGUF (via llama-cpp-python)
+- Suporta modelos HuggingFace com compressão 4-bit/8-bit
 - Ideal para GPUs com pouca VRAM
+
+## 📋 Fluxo de Trabalho
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    DOWNLOAD DE MODELOS                       │
+├─────────────────────────────────────────────────────────────┤
+│  🅰️ Ollama          │  🅱️ LMStudio                          │
+│  - llama3.2         │  - Arquivos GGUF do HuggingFace       │
+│  - mistral          │  - TheBloke/Llama-2-7B-GGUF          │
+│  - codellama        │  - bartowski/gemma-2-2b-it-GGUF      │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    EXECUÇÃO DE MODELOS                       │
+├─────────────────────────────────────────────────────────────┤
+│  🅰️ Ollama (nativo) │  🅱️ LMStudio (nativo)  │  🚀 AirLLM  │
+│  - Rápido           │  - API OpenAI          │  - GGUF     │
+│  - Otimizado        │  - Fácil de usar       │  - HuggingFace│
+│                     │                        │  - 4-bit/8-bit│
+└─────────────────────────────────────────────────────────────┘
+```
 
 ## 📦 Instalação
 

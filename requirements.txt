@@ -3,3 +3,5 @@ airllm>=2.8.0
 requests>=2.31.0
 httpx>=0.25.0
 pyinstaller>=6.0.0
+llama-cpp-python>=0.2.0
+huggingface_hub>=0.20.0

@@ -236,7 +236,9 @@ class WorkspaceManager:
             return ""
 
         folders_str = "\n".join(f"  - {f}" for f in self._allowed_folders)
-        return f"""
+        example_folder = str(self._allowed_folders[0])
+
+        prompt = f"""
 
 SYSTEM CAPABILITIES & AUTONOMOUS PROGRAMMER PERSONA
 ======================================================================
@@ -253,14 +255,15 @@ You can perform file operations by including exactly formatted <tool_call>
 JSON blocks in your response. Each block must contain valid JSON.
 
 AVAILABLE TOOLS:
-• create_file      — {{"tool": "create_file", "path": "<full_absolute_path>", "content": "<entire_file_content>"}}
-• modify_file      — {{"tool": "modify_file", "path": "<full_absolute_path>", "content": "<entire_new_file_content>"}}
-• delete_file      — {{"tool": "delete_file", "path": "<full_absolute_path>"}}
-• move_file        — {{"tool": "move_file", "src": "<full_absolute_path>", "dst": "<full_absolute_path>"}}
-• read_file        — {{"tool": "read_file", "path": "<full_absolute_path>"}}
-• list_directory   — {{"tool": "list_directory", "path": "<full_absolute_path>"}}
-• create_directory — {{"tool": "create_directory", "path": "<full_absolute_path>"}}
-
+"""
+        prompt += '• create_file      — {"tool": "create_file", "path": "<full_absolute_path>", "content": "<entire_file_content>"}\n'
+        prompt += '• modify_file      — {"tool": "modify_file", "path": "<full_absolute_path>", "content": "<entire_new_file_content>"}\n'
+        prompt += '• delete_file      — {"tool": "delete_file", "path": "<full_absolute_path>"}\n'
+        prompt += '• move_file        — {"tool": "move_file", "src": "<full_absolute_path>", "dst": "<full_absolute_path>"}\n'
+        prompt += '• read_file        — {"tool": "read_file", "path": "<full_absolute_path>"}\n'
+        prompt += '• list_directory   — {"tool": "list_directory", "path": "<full_absolute_path>"}\n'
+        prompt += '• create_directory — {"tool": "create_directory", "path": "<full_absolute_path>"}\n'
+        prompt += """
 YOUR WORKFLOW:
 1. UNDERSTAND & EXPLORE: If the user asks for a change but you don't know the exact file contents, ALWAYS use `list_directory` and `read_file` first to gather context before writing code.
 2. PLAN: Think step-by-step about how you will solve the problem.
@@ -276,18 +279,13 @@ CRITICAL RULES FOR TOOL CALLS:
 
 Example of exploring:
 <tool_call>
-{
-  "tool": "list_directory",
-  "path": "{self._allowed_folders[0] if self._allowed_folders else '/YOUR_WORKSPACE_FOLDER'}"
-}
-</tool_call>
+"""
+        prompt += '{"tool": "list_directory", "path": "' + example_folder + '"}\n'
+        prompt += """</tool_call>
 
 Example of modifying code:
 <tool_call>
-{
-  "tool": "modify_file",
-  "path": "{self._allowed_folders[0] if self._allowed_folders else '/YOUR_WORKSPACE_FOLDER'}/main.py",
-  "content": "print('Hello world!')\\n"
-}
-</tool_call>
 """
+        prompt += '{"tool": "modify_file", "path": "' + example_folder + '/main.py", "content": "print(\'Hello world!\')\\n"}\n'
+        prompt += "</tool_call>\n"
+        return prompt

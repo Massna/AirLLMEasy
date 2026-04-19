@@ -167,14 +167,38 @@ class WorkspaceManager:
     @staticmethod
     def parse_tool_calls(response_text: str) -> List[Dict[str, Any]]:
         """Extract ``<tool_call>...</tool_call>`` JSON blocks from AI text."""
-        pattern = r"<tool_call>\s*(\{.*?\})\s*</tool_call>"
-        matches = re.findall(pattern, response_text, re.DOTALL)
         calls = []
+        # Pattern 1: <tool_call> ... </tool_call>
+        pattern = r"<tool_call>\s*(.*?)\s*</tool_call>"
+        matches = re.findall(pattern, response_text, re.DOTALL | re.IGNORECASE)
+        
         for m in matches:
+            m = m.strip()
+            # Clean markdown code blocks if the AI inserted them inside the tag
+            if m.lower().startswith("```json"):
+                m = m[7:]
+            elif m.startswith("```"):
+                m = m[3:]
+            if m.endswith("```"):
+                m = m[:-3]
+            m = m.strip()
+            
             try:
                 calls.append(json.loads(m))
             except json.JSONDecodeError:
                 continue
+                
+        # Pattern 2: Fallback to just grabbing floating JSON blocks if tags failed
+        if not calls:
+            json_blocks = re.findall(r"```json\s*(\{.*?\})\s*```", response_text, re.DOTALL | re.IGNORECASE)
+            for jb in json_blocks:
+                try:
+                    parsed = json.loads(jb)
+                    if isinstance(parsed, dict) and "tool" in parsed:
+                        calls.append(parsed)
+                except json.JSONDecodeError:
+                    continue
+
         return calls
 
     # ------------------------------------------------------------------
@@ -240,11 +264,22 @@ CRITICAL RULES FOR TOOL CALLS:
 - ALWAYS use FULL, ABSOLUTE paths (e.g., C:/Users/.../folder/file.py or /home/.../folder/file.py).
 - When using `modify_file`, you MUST provide the ENTIRE completely rewritten file content in the "content" field. Do not use placeholders or summaries. The existing file will be overwritten with exactly what you provide.
 - You can chain multiple <tool_call> blocks in a single response to perform multiple actions at once.
-- DO NOT wrap the <tool_call> tags themselves in markdown code blocks. They must be raw text in your response.
+- Output pure JSON inside the tags. Escape all quotes and newlines correctly!
 
 Example of exploring:
-<tool_call> {{"tool": "list_directory", "path": "{self._allowed_folders[0] if self._allowed_folders else '/YOUR_WORKSPACE_FOLDER'}"}} </tool_call>
+<tool_call>
+{
+  "tool": "list_directory",
+  "path": "{self._allowed_folders[0] if self._allowed_folders else '/YOUR_WORKSPACE_FOLDER'}"
+}
+</tool_call>
 
 Example of modifying code:
-<tool_call> {{"tool": "modify_file", "path": "{self._allowed_folders[0] if self._allowed_folders else '/YOUR_WORKSPACE_FOLDER'}/main.py", "content": "print('Hello world!')\\n"}} </tool_call>
+<tool_call>
+{
+  "tool": "modify_file",
+  "path": "{self._allowed_folders[0] if self._allowed_folders else '/YOUR_WORKSPACE_FOLDER'}/main.py",
+  "content": "print('Hello world!')\\n"
+}
+</tool_call>
 """

@@ -11,6 +11,7 @@ from .download_tab import DownloadTab
 from .chat_tab import ChatTab
 from .settings_tab import SettingsTab
 from ..utils.config import Config
+from src.utils.extensions import ExtensionManager
 
 
 # ─────────────────────────────────── Theme ────────────────────────────────────
@@ -392,6 +393,10 @@ class MainWindow(QMainWindow):
             self.restoreGeometry(bytes.fromhex(geometry))
         else:
             self.resize(1120, 760)
+
+        # Extensions
+        self.extension_mgr = ExtensionManager(self.config)
+        self.extension_mgr.load_all(self)
 
         self._setup_ui()
         self._setup_menu()

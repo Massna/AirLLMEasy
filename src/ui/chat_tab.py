@@ -12,6 +12,7 @@ from PySide6.QtGui import QFont, QTextCursor, QColor
 
 from ..utils.config import Config
 from ..utils.file_ops import WorkspaceManager
+from ..utils.extensions import ExtensionManager
 from ..backends.ollama_backend import OllamaBackend
 from ..backends.lmstudio_backend import LMStudioBackend
 from ..backends.airllm_backend import AirLLMBackend
@@ -333,17 +334,18 @@ class WorkspacePanel(QFrame):
 class ChatTab(QWidget):
     """Chat tab with AI models — premium design with file operations."""
 
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, ollama_backend, lmstudio_backend, airllm_backend, extension_mgr):
         super().__init__()
         self.config = config
 
         # Backends
-        self.ollama = OllamaBackend(config.ollama_url)
-        self.lmstudio = LMStudioBackend(config.lmstudio_url)
-        self.airllm = AirLLMBackend(config)
+        self.ollama = ollama_backend
+        self.lmstudio = lmstudio_backend
+        self.airllm = airllm_backend
 
         # Workspace manager for file operations
         self.workspace_mgr = WorkspaceManager(config.workspace_folders)
+        self.extension_mgr = extension_mgr
 
         self.chat_worker = None
         self.load_worker = None
@@ -706,10 +708,18 @@ class ChatTab(QWidget):
             QMessageBox.warning(self, "Warning", "Wait for the previous response!")
             return
 
-        # Build system prompt with file ops context
+        # Build system prompt with file ops context & extensions
         system_prompt = self.config.system_prompt
+        
+        # Inject standard file tools
         if self.config.file_ops_enabled and self.workspace_mgr.allowed_folders:
             system_prompt += self.workspace_mgr.build_system_prompt_fragment()
+            
+        # Inject extension tools
+        ext_tools = self.extension_mgr.get_all_tools()
+        if ext_tools:
+            tools_desc = "\n".join([f"• {t['name']} — {t['description']} | Format: {t.get('format', '{}')}" for t in ext_tools])
+            system_prompt += f"\n\nAVAILABLE EXTENSION TOOLS:\nYou may also use the following extension tools by outputting a JSON <tool_call> block containing the fields described above.\n{tools_desc}\n"
 
         # Determine backend
         if self.ollama_radio.isChecked():
@@ -813,14 +823,26 @@ class ChatTab(QWidget):
     # ─────────────────────────── File Operations ──────────────────────────
 
     def _process_file_operations(self, response: str):
-        """Parse and execute file operations from the AI response."""
+        """Parse and execute file operations / extension tools from the AI response."""
         tool_calls = WorkspaceManager.parse_tool_calls(response)
         if not tool_calls:
             return
 
+        # Build lookup table for extension handlers
+        ext_handlers = {t["name"]: t["handler"] for t in self.extension_mgr.get_all_tools()}
+
         for tc in tool_calls:
-            tool_name = tc.get("tool", "unknown")
-            result = self.workspace_mgr.execute_tool_call(tc)
+            tool_name = tc.get("tool", "unknown").lower()
+            
+            # Check if it's an extension tool first
+            if tool_name in ext_handlers:
+                try:
+                    result = ext_handlers[tool_name](tc)
+                except Exception as e:
+                    result = f"Error executing plugin tool {tool_name}: {e}"
+            else:
+                # Fallback to standard file operations
+                result = self.workspace_mgr.execute_tool_call(tc)
 
             # Log to the file ops panel
             is_error = result.startswith("Error")
@@ -835,6 +857,6 @@ class ChatTab(QWidget):
 
             # Show in chat
             if is_error:
-                self._add_system_message(f"❌ File op failed: {result}")
+                self._add_system_message(f"❌ Tool failed: {result}")
             else:
                 self._add_system_message(f"✅ {result}")

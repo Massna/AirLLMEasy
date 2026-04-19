@@ -415,6 +415,14 @@ class AirLLMBackend:
         except Exception as e:
             return f"Generation error: {e}"
     
+    def chat(self, message: str, 
+             system_prompt: str = "You are a helpful assistant.",
+             max_new_tokens: int = 512,
+             stream_callback: Optional[Callable[[str], None]] = None,
+             conversation_history: Optional[list] = None) -> str:
+        """
+        Simplified chat interface with history support.
+        """
         # Format as chat with history (using a more standard Llama-3/Mistral like separator)
         full_prompt = f"<|system|>\n{system_prompt}\n"
         

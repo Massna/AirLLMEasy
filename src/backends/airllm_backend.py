@@ -417,26 +417,26 @@ class AirLLMBackend:
     
     def chat(self, message: str, 
              system_prompt: str = "You are a helpful assistant.",
-             max_new_tokens: int = 256,
-             stream_callback: Optional[Callable[[str], None]] = None) -> str:
+             max_new_tokens: int = 512,
+             stream_callback: Optional[Callable[[str], None]] = None,
+             conversation_history: Optional[list] = None) -> str:
         """
-        Simplified chat interface.
+        Simplified chat interface with history support.
+        """
+        # Format as chat with history
+        full_prompt = f"### System:\n{system_prompt}\n\n"
         
-        Args:
-            message: User message
-            system_prompt: System prompt
-            max_new_tokens: Maximum tokens
-            stream_callback: Callback for streaming
-        """
-        # Format as chat
-        full_prompt = f"""### System:
-{system_prompt}
+        if conversation_history:
+            for msg in conversation_history:
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+                if role == "user":
+                    full_prompt += f"### User:\n{content}\n\n"
+                elif role == "assistant":
+                    full_prompt += f"### Assistant:\n{content}\n\n"
+        
+        full_prompt += f"### User:\n{message}\n\n### Assistant:\n"
 
-### User:
-{message}
-
-### Assistant:
-"""
         return self.generate(
             full_prompt, 
             max_new_tokens=max_new_tokens,

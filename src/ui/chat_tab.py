@@ -62,7 +62,8 @@ class ChatWorker(QThread):
                     self.message,
                     system_prompt=self.system_prompt,
                     max_new_tokens=self.max_tokens,
-                    stream_callback=lambda t: self.token_received.emit(t)
+                    stream_callback=lambda t: self.token_received.emit(t),
+                    conversation_history=self.conversation_history
                 )
             else:
                 response = "Backend not supported"

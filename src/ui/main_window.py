@@ -10,6 +10,7 @@ from PySide6.QtGui import QAction, QIcon, QFont, QColor
 from .download_tab import DownloadTab
 from .chat_tab import ChatTab
 from .settings_tab import SettingsTab
+from .extensions_tab import ExtensionsTab
 from ..utils.config import Config
 from src.utils.extensions import ExtensionManager
 
@@ -475,7 +476,8 @@ class MainWindow(QMainWindow):
         sidebar_items = [
             ("📥", "Download", 0),
             ("💬", "Chat", 1),
-            ("⚙️", "Settings", 2),
+            ("🧩", "Extensions", 2),
+            ("⚙️", "Settings", 3),
         ]
         
         for icon, tooltip, idx in sidebar_items:
@@ -517,6 +519,10 @@ class MainWindow(QMainWindow):
         # Chat Tab
         self.chat_tab = ChatTab(self.config, self.extension_mgr)
         self.tab_widget.addTab(self.chat_tab, "Chat")
+
+        # Extensions Tab
+        self.extensions_tab = ExtensionsTab(self.config, self.extension_mgr)
+        self.tab_widget.addTab(self.extensions_tab, "Extensions")
 
         # Settings Tab
         self.settings_tab = SettingsTab(self.config)

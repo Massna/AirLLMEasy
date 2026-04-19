@@ -53,42 +53,6 @@ class ExtensionManager:
 
         self.extensions_dir = (base_path / "extensions").resolve()
         self.extensions_dir.mkdir(parents=True, exist_ok=True)
-        # Create an example extension if none exist
-        self._create_example_extension()
-
-    def _create_example_extension(self):
-        example_path = self.extensions_dir / "example_plugin.py"
-        if not example_path.exists():
-            example_path.write_text('''from src.utils.extensions import BaseExtension
-
-class MathExtension(BaseExtension):
-    name = "Math Tools"
-    description = "Provides advanced math evaluation to the AI."
-    version = "1.0"
-    author = "AirLLMEasy"
-
-    def get_ai_tools(self):
-        return [{
-            "name": "math_eval",
-            "description": "Evaluates a mathematical expression (e.g. 2 + 2). Arguments: expression",
-            "format": \'{"tool": "math_eval", "expression": "2 * 4"}\',
-            "handler": self.execute_math
-        }]
-
-    def execute_math(self, args: dict) -> str:
-        expression = args.get("expression", "")
-        try:
-            # DANGER: Using eval for demonstration. In real-world, use a safe math parser.
-            # Allowed builtins are restricted to avoid arbitrary code execution
-            allowed_names = {"abs": abs, "round": round, "min": min, "max": max}
-            result = eval(expression, {"__builtins__": {}}, allowed_names)
-            return f"Result: {result}"
-        except Exception as e:
-            return f"Math error: {e}"
-
-def get_extension():
-    return MathExtension()
-''', encoding="utf-8")
 
     def load_all(self, app_context) -> None:
         """Loads all Python files in the extensions folder."""

@@ -5,10 +5,10 @@ from PySide6.QtWidgets import (
     QTextEdit, QPlainTextEdit, QComboBox, QGroupBox, QSplitter,
     QFrame, QSpinBox, QDoubleSpinBox, QMessageBox, QRadioButton,
     QButtonGroup, QListWidget, QListWidgetItem, QDialog, QDialogButtonBox,
-    QFileDialog, QCheckBox, QScrollArea, QSizePolicy
+    QFileDialog, QCheckBox, QScrollArea, QSizePolicy, QMenu
 )
 from PySide6.QtCore import Qt, QThread, Signal, QTimer
-from PySide6.QtGui import QFont, QTextCursor, QColor
+from PySide6.QtGui import QFont, QTextCursor, QColor, QAction
 
 from ..utils.config import Config
 from ..utils.file_ops import WorkspaceManager
@@ -251,11 +251,22 @@ class WorkspacePanel(QFrame):
         self.add_folder_btn.setStyleSheet("padding: 2px 10px;")
         self.add_folder_btn.clicked.connect(self._add_folder)
         header_row.addWidget(self.add_folder_btn)
+
+        self.remove_btn = QPushButton("🗑️ Remove Folder")
+        self.remove_btn.setObjectName("DangerBtn")
+        self.remove_btn.setFixedHeight(28)
+        self.remove_btn.setToolTip("Remove selected folder")
+        self.remove_btn.setStyleSheet("padding: 2px 10px; font-size: 11px;")
+        self.remove_btn.clicked.connect(self._remove_folder)
+        header_row.addWidget(self.remove_btn)
+        
         layout.addLayout(header_row)
 
         # Folder list
         self.folder_list = QListWidget()
         self.folder_list.setMaximumHeight(120)
+        self.folder_list.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.folder_list.customContextMenuRequested.connect(self._show_folder_context_menu)
         self.folder_list.setStyleSheet("""
             QListWidget {
                 font-size: 11px;
@@ -268,24 +279,11 @@ class WorkspacePanel(QFrame):
         """)
         layout.addWidget(self.folder_list)
 
-        # File ops toggle
         self.file_ops_check = QCheckBox("Enable AI file operations")
         self.file_ops_check.setChecked(self.config.file_ops_enabled)
         self.file_ops_check.setStyleSheet("font-size: 11px; color: #6c7086;")
         self.file_ops_check.toggled.connect(self._on_file_ops_toggled)
         layout.addWidget(self.file_ops_check)
-
-        # Remove button
-        btn_row = QHBoxLayout()
-        self.remove_btn = QPushButton("Remove")
-        self.remove_btn.setObjectName("DangerBtn")
-        self.remove_btn.setFixedHeight(26)
-        self.remove_btn.setFixedWidth(80)
-        self.remove_btn.setStyleSheet("font-size: 11px; padding: 4px 10px;")
-        self.remove_btn.clicked.connect(self._remove_folder)
-        btn_row.addWidget(self.remove_btn)
-        btn_row.addStretch()
-        layout.addLayout(btn_row)
 
     def _load_folders(self):
         self.folder_list.clear()
@@ -311,18 +309,30 @@ class WorkspacePanel(QFrame):
                 self._load_folders()
                 self.folders_changed.emit()
 
+    def _show_folder_context_menu(self, pos):
+        item = self.folder_list.itemAt(pos)
+        if item:
+            menu = QMenu(self)
+            remove_action = QAction("🗑️ Remove Folder", self)
+            remove_action.triggered.connect(lambda: self._remove_specific_folder(item))
+            menu.addAction(remove_action)
+            menu.exec(self.folder_list.mapToGlobal(pos))
+
+    def _remove_specific_folder(self, item):
+        folder = item.data(Qt.UserRole)
+        self.workspace_mgr.remove_folder(folder)
+        folders = self.config.workspace_folders
+        if folder in folders:
+            folders.remove(folder)
+            self.config.workspace_folders = folders
+            self.config.save()
+        self._load_folders()
+        self.folders_changed.emit()
+
     def _remove_folder(self):
         current = self.folder_list.currentItem()
         if current:
-            folder = current.data(Qt.UserRole)
-            self.workspace_mgr.remove_folder(folder)
-            folders = self.config.workspace_folders
-            if folder in folders:
-                folders.remove(folder)
-                self.config.workspace_folders = folders
-                self.config.save()
-            self._load_folders()
-            self.folders_changed.emit()
+            self._remove_specific_folder(current)
 
     def _on_file_ops_toggled(self, checked):
         self.config.file_ops_enabled = checked
@@ -508,6 +518,13 @@ class ChatTab(QWidget):
         buttons_layout.addWidget(self.temp_spin)
 
         buttons_layout.addStretch()
+
+        self.new_session_btn = QPushButton("🧹 New Session")
+        self.new_session_btn.setObjectName("GhostBtn")
+        self.new_session_btn.setToolTip("Start a fresh conversation and wipe workspace")
+        self.new_session_btn.clicked.connect(self._clear_chat)
+        self.new_session_btn.setFixedHeight(30)
+        buttons_layout.addWidget(self.new_session_btn)
 
         self.clear_btn = QPushButton("🗑 Clear")
         self.clear_btn.setObjectName("GhostBtn")
@@ -818,7 +835,15 @@ class ChatTab(QWidget):
     def _clear_chat(self):
         self.chat_display.clear()
         self.conversation_history.clear()
-        self._add_system_message("Chat cleared. Start a new conversation!")
+        
+        # Also wipe workspaces for the "new session" feeling
+        self.config.workspace_folders = []
+        self.config.save()
+        self.workspace_mgr._allowed_folders.clear()
+        self.workspace_panel._load_folders()
+        self.workspace_panel.folders_changed.emit()
+
+        self._add_system_message("Session started! Chat and Workspaces cleared.")
 
     # ─────────────────────────── File Operations ──────────────────────────
 

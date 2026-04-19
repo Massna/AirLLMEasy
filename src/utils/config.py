@@ -25,6 +25,8 @@ class Config:
         "workspace_folders": [],  # folders the AI can read/write
         "system_prompt": "You are a helpful assistant.",
         "file_ops_enabled": True,  # allow AI file operations
+        "chat_sessions": {},
+        "current_session_id": "default",
     }
     
     def __init__(self, config_path: Optional[str] = None):
@@ -184,3 +186,20 @@ class Config:
     @file_ops_enabled.setter
     def file_ops_enabled(self, value: bool) -> None:
         self._config["file_ops_enabled"] = value
+
+    @property
+    def chat_sessions(self) -> dict:
+        return self._config.get("chat_sessions", {})
+
+    @chat_sessions.setter
+    def chat_sessions(self, value: dict) -> None:
+        self._config["chat_sessions"] = value
+
+    @property
+    def current_session_id(self) -> str:
+        return self._config.get("current_session_id", "default")
+
+    @current_session_id.setter
+    def current_session_id(self, value: str) -> None:
+        self._config["current_session_id"] = value
+

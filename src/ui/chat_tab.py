@@ -362,6 +362,7 @@ class ChatTab(QWidget):
         self.conversation_history = []
 
         self._setup_ui()
+        self._load_sessions()
         self._refresh_models()
 
     def _setup_ui(self):
@@ -375,6 +376,34 @@ class ChatTab(QWidget):
         chat_layout = QVBoxLayout(chat_area)
         chat_layout.setContentsMargins(0, 0, 0, 0)
         chat_layout.setSpacing(10)
+
+        # === Session Row ===
+        session_frame = QFrame()
+        session_frame.setObjectName("Card")
+        session_layout = QHBoxLayout(session_frame)
+        session_layout.setContentsMargins(14, 8, 14, 8)
+        
+        session_label = QLabel("Session:")
+        session_label.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
+        session_layout.addWidget(session_label)
+        
+        self.session_combo = QComboBox()
+        self.session_combo.setMinimumWidth(200)
+        self.session_combo.currentIndexChanged.connect(self._on_session_changed)
+        session_layout.addWidget(self.session_combo)
+        
+        self.new_session_btn = QPushButton("➕ New")
+        self.new_session_btn.setObjectName("SuccessBtn")
+        self.new_session_btn.clicked.connect(self._create_new_session)
+        session_layout.addWidget(self.new_session_btn)
+        
+        self.del_session_btn = QPushButton("🗑️")
+        self.del_session_btn.setObjectName("DangerBtn")
+        self.del_session_btn.clicked.connect(self._delete_session)
+        session_layout.addWidget(self.del_session_btn)
+        
+        session_layout.addStretch()
+        chat_layout.addWidget(session_frame)
 
         # === Backend selector row ===
         config_frame = QFrame()
@@ -518,13 +547,6 @@ class ChatTab(QWidget):
         buttons_layout.addWidget(self.temp_spin)
 
         buttons_layout.addStretch()
-
-        self.new_session_btn = QPushButton("🧹 New Session")
-        self.new_session_btn.setObjectName("GhostBtn")
-        self.new_session_btn.setToolTip("Start a fresh conversation and wipe workspace")
-        self.new_session_btn.clicked.connect(self._clear_chat)
-        self.new_session_btn.setFixedHeight(30)
-        buttons_layout.addWidget(self.new_session_btn)
 
         self.clear_btn = QPushButton("🗑 Clear")
         self.clear_btn.setObjectName("GhostBtn")
@@ -789,7 +811,7 @@ class ChatTab(QWidget):
             f'border-radius: 8px; margin: 4px 0;">📋 {message}</p>'
         )
 
-    def _add_user_message(self, message: str):
+    def _add_user_message(self, message: str, save: bool = True):
         escaped = message.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
         self.chat_display.append(
             f'<div style="margin: 8px 0;">'
@@ -797,7 +819,9 @@ class ChatTab(QWidget):
             f'<p style="margin-left: 24px; color: #e0e0ec; line-height: 1.5;">{escaped}</p>'
             f'</div>'
         )
-        self.conversation_history.append({"role": "user", "content": message})
+        if save:
+            self.conversation_history.append({"role": "user", "content": message})
+            self._save_current_session()
 
     def _add_assistant_header(self):
         self.chat_display.append(
@@ -818,6 +842,7 @@ class ChatTab(QWidget):
         self.send_btn.setEnabled(True)
         self.send_btn.setText("Send 🚀")
         self.conversation_history.append({"role": "assistant", "content": response})
+        self._save_current_session()
 
         # Process file operations from the response
         if self.config.file_ops_enabled and self.workspace_mgr.allowed_folders:
@@ -832,18 +857,98 @@ class ChatTab(QWidget):
         self.send_btn.setEnabled(True)
         self.send_btn.setText("Send 🚀")
 
-    def _clear_chat(self):
-        self.chat_display.clear()
-        self.conversation_history.clear()
-        
-        # Also wipe workspaces for the "new session" feeling
-        self.config.workspace_folders = []
+    def _save_current_session(self):
+        sid = self.config.current_session_id
+        if not sid: return
+        self.config.chat_sessions.setdefault(sid, {})
+        self.config.chat_sessions[sid]["history"] = self.conversation_history
+        self.config.chat_sessions[sid]["workspaces"] = self.config.workspace_folders
         self.config.save()
-        self.workspace_mgr._allowed_folders.clear()
-        self.workspace_panel._load_folders()
-        self.workspace_panel.folders_changed.emit()
 
-        self._add_system_message("Session started! Chat and Workspaces cleared.")
+    def _load_sessions(self):
+        self.session_combo.blockSignals(True)
+        self.session_combo.clear()
+        sessions = self.config.chat_sessions
+        if not sessions:
+            import uuid
+            sid = str(uuid.uuid4())
+            sessions[sid] = {"name": "Session 1", "history": [], "workspaces": []}
+            self.config.current_session_id = sid
+            self.config.save()
+            
+        for sid, sdata in sessions.items():
+            self.session_combo.addItem(sdata.get("name", "Unnamed Session"), userData=sid)
+            
+        idx = self.session_combo.findData(self.config.current_session_id)
+        if idx >= 0:
+            self.session_combo.setCurrentIndex(idx)
+        self.session_combo.blockSignals(False)
+        self._on_session_changed(max(0, idx))
+
+    def _on_session_changed(self, idx):
+        if idx < 0: return
+        sid = self.session_combo.itemData(idx)
+        if sid != self.config.current_session_id:
+            self._save_current_session()
+            self.config.current_session_id = sid
+        
+        session_data = self.config.chat_sessions.get(sid, {})
+        self.conversation_history = session_data.get("history", [])
+        self.config.workspace_folders = session_data.get("workspaces", [])
+        self.config.save()
+        
+        self.workspace_mgr._allowed_folders = set(self.config.workspace_folders)
+        self.workspace_panel._load_folders()
+        self._refresh_chat_display()
+        
+    def _refresh_chat_display(self):
+        self.chat_display.clear()
+        if not self.conversation_history:
+            self._add_system_message("Session started! Chat and Workspaces ready.")
+        for msg in self.conversation_history:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            if role == "user":
+                self._add_user_message(content, save=False)
+            elif role == "assistant":
+                escaped = content.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                self.chat_display.append(
+                    f'<div style="margin: 8px 0;">'
+                    f'<p style="color: #a6e3a1; font-weight: bold; font-size: 13px;">🤖 Assistant</p>'
+                    f'<p style="margin-left: 24px; color: #e0e0ec; line-height: 1.5;">{escaped}</p>'
+                    f'</div><br>'
+                )
+            elif role == "system":
+                self._add_system_message(content)
+
+    def _create_new_session(self):
+        self._save_current_session()
+        import uuid
+        sid = str(uuid.uuid4())
+        name = f"Session {self.session_combo.count() + 1}"
+        self.config.chat_sessions[sid] = {"name": name, "history": [], "workspaces": []}
+        self.config.current_session_id = sid
+        self.config.save()
+        self._load_sessions()
+
+    def _delete_session(self):
+        sid = self.config.current_session_id
+        if len(self.config.chat_sessions) <= 1:
+            QMessageBox.warning(self, "Warning", "Cannot delete the last session.")
+            return
+            
+        reply = QMessageBox.question(self, "Delete Session", "Are you sure you want to delete this session?",
+                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            del self.config.chat_sessions[sid]
+            self.config.current_session_id = list(self.config.chat_sessions.keys())[0]
+            self.config.save()
+            self._load_sessions()
+            
+    def _clear_chat(self):
+        self.conversation_history.clear()
+        self._save_current_session()
+        self._refresh_chat_display()
 
     # ─────────────────────────── File Operations ──────────────────────────
 

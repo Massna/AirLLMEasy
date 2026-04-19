@@ -56,12 +56,24 @@ class WorkspaceManager:
         return [str(f) for f in self._allowed_folders]
 
     def is_path_allowed(self, target: str) -> bool:
-        """Check whether *target* is inside one of the allowed folders, or matches an allowed file."""
+        """Check whether *target* is inside one of the allowed folders, or matches an allowed file.
+        
+        For files that don't exist yet (create_file), we check if their
+        parent directory is inside an allowed folder.
+        """
         t = Path(target).resolve()
         for f in self._allowed_folders:
             if f.is_file() and t == f:
                 return True
             if f.is_dir() and self._is_subpath(t, f):
+                return True
+        # For new files: check if the parent is inside an allowed folder
+        parent = t.parent
+        for f in self._allowed_folders:
+            if f.is_dir() and self._is_subpath(parent, f):
+                return True
+            # Also allow creating sibling files next to an allowed file
+            if f.is_file() and parent == f.parent:
                 return True
         return False
 
@@ -86,7 +98,10 @@ class WorkspaceManager:
         self._assert_allowed(path)
         p = Path(path)
         if not p.is_file():
-            raise FileOperationError(f"File not found: {path}")
+            # Auto-create if it doesn't exist yet
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(content, encoding="utf-8")
+            return f"Created (via modify): {path}"
         p.write_text(content, encoding="utf-8")
         return f"Modified: {path}"
 

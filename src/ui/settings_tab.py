@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, Signal
 
 from ..utils.config import Config
+from src.utils.i18n import t
 from ..utils.airllm_import import (
     set_airllm_packages_path,
     resolve_airllm_site_packages,
@@ -42,7 +43,7 @@ class SettingsTab(QWidget):
         layout.setContentsMargins(0, 0, 12, 0)
 
         # === Download Backend ===
-        download_group = QGroupBox("  Download Backend")
+        download_group = QGroupBox(f"  {t('settings.download_backend', 'Download Backend')}")
         download_layout = QVBoxLayout(download_group)
         download_layout.setSpacing(10)
 
@@ -55,7 +56,7 @@ class SettingsTab(QWidget):
         ollama_card_layout.setContentsMargins(12, 10, 12, 10)
 
         self.ollama_radio = QRadioButton("Ollama")
-        self.ollama_radio.setToolTip("Downloads models from the Ollama registry")
+        self.ollama_radio.setToolTip(t("settings.ollama_tip", "Downloads models from the Ollama registry"))
         self.ollama_radio.setStyleSheet("font-weight: bold;")
         self.backend_group.addButton(self.ollama_radio)
         ollama_card_layout.addWidget(self.ollama_radio)
@@ -77,7 +78,7 @@ class SettingsTab(QWidget):
         lmstudio_card_layout.setContentsMargins(12, 10, 12, 10)
 
         self.lmstudio_radio = QRadioButton("LMStudio")
-        self.lmstudio_radio.setToolTip("Downloads GGUF models from HuggingFace")
+        self.lmstudio_radio.setToolTip(t("settings.lmstudio_tip", "Downloads GGUF models from HuggingFace"))
         self.lmstudio_radio.setStyleSheet("font-weight: bold;")
         self.backend_group.addButton(self.lmstudio_radio)
         lmstudio_card_layout.addWidget(self.lmstudio_radio)
@@ -95,7 +96,7 @@ class SettingsTab(QWidget):
         layout.addWidget(download_group)
 
         # === AirLLM ===
-        airllm_group = QGroupBox("  AirLLM — Optimized Execution")
+        airllm_group = QGroupBox(f"  {t('settings.airllm_title', 'AirLLM — Optimized Execution')}")
         airllm_layout = QVBoxLayout(airllm_group)
         airllm_layout.setSpacing(10)
 
@@ -105,14 +106,14 @@ class SettingsTab(QWidget):
         compression_layout = QHBoxLayout(compression_card)
         compression_layout.setContentsMargins(12, 10, 12, 10)
 
-        comp_label = QLabel("Compression:")
+        comp_label = QLabel(t("settings.compression", "Compression:"))
         comp_label.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
         compression_layout.addWidget(comp_label)
 
         self.compression_combo = QComboBox()
-        self.compression_combo.addItem("4-bit (Recommended)", "4bit")
-        self.compression_combo.addItem("8-bit", "8bit")
-        self.compression_combo.addItem("No compression", "none")
+        self.compression_combo.addItem(t("settings.comp_4bit", "4-bit (Recommended)"), "4bit")
+        self.compression_combo.addItem(t("settings.comp_8bit", "8-bit"), "8bit")
+        self.compression_combo.addItem(t("settings.comp_none", "No compression"), "none")
         compression_layout.addWidget(self.compression_combo)
         compression_layout.addStretch()
 
@@ -124,7 +125,7 @@ class SettingsTab(QWidget):
         ctx_layout = QHBoxLayout(ctx_card)
         ctx_layout.setContentsMargins(12, 10, 12, 10)
 
-        ctx_label = QLabel("Internal Context (n_ctx):")
+        ctx_label = QLabel(t("settings.context_size", "Internal Context (n_ctx):"))
         ctx_label.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
         ctx_layout.addWidget(ctx_label)
 
@@ -143,7 +144,7 @@ class SettingsTab(QWidget):
         """)
         ctx_layout.addWidget(self.airllm_ctx_spin)
 
-        ctx_hint = QLabel("0 = Auto (Use model max capacity, uses more RAM)")
+        ctx_hint = QLabel(t("settings.context_hint", "0 = Auto (Use model max capacity, uses more RAM)"))
         ctx_hint.setStyleSheet("color: #45475a; font-size: 10px;")
         ctx_layout.addWidget(ctx_hint)
         ctx_layout.addStretch()
@@ -151,10 +152,7 @@ class SettingsTab(QWidget):
         airllm_layout.addWidget(ctx_card)
 
         # Path help
-        path_help = QLabel(
-            "If the app can't find AirLLM, point to the site-packages folder where pip installed "
-            "the package. You can also select the virtual environment root."
-        )
+        path_help = QLabel(t("settings.packages_help", "If the app can't find AirLLM, point to the site-packages folder where pip installed the package. You can also select the virtual environment root."))
         path_help.setWordWrap(True)
         path_help.setStyleSheet("color: #6c7086; font-size: 11px; padding: 4px 8px;")
         airllm_layout.addWidget(path_help)
@@ -167,7 +165,7 @@ class SettingsTab(QWidget):
         path_card_layout.setSpacing(8)
 
         path_row = QHBoxLayout()
-        path_lbl = QLabel("AirLLM Folder:")
+        path_lbl = QLabel(t("settings.airllm_folder", "AirLLM Folder:"))
         path_lbl.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
         path_row.addWidget(path_lbl)
 
@@ -180,18 +178,18 @@ class SettingsTab(QWidget):
         btn_row = QHBoxLayout()
         btn_row.setSpacing(8)
 
-        self.airllm_browse_btn = QPushButton("📁 Browse…")
+        self.airllm_browse_btn = QPushButton(f"📁 {t('settings.browse', 'Browse…')}")
         self.airllm_browse_btn.setObjectName("GhostBtn")
         self.airllm_browse_btn.setFixedHeight(30)
         self.airllm_browse_btn.clicked.connect(self._browse_airllm_folder)
         btn_row.addWidget(self.airllm_browse_btn)
 
-        self.airllm_autodetect_btn = QPushButton("🔎 Auto-detect")
+        self.airllm_autodetect_btn = QPushButton(f"🔎 {t('settings.autodetect', 'Auto-detect')}")
         self.airllm_autodetect_btn.setFixedHeight(30)
         self.airllm_autodetect_btn.clicked.connect(self._auto_detect_airllm)
         btn_row.addWidget(self.airllm_autodetect_btn)
 
-        self.airllm_clear_path_btn = QPushButton("Clear")
+        self.airllm_clear_path_btn = QPushButton(t("settings.clear", "Clear"))
         self.airllm_clear_path_btn.setObjectName("GhostBtn")
         self.airllm_clear_path_btn.setFixedHeight(30)
         self.airllm_clear_path_btn.clicked.connect(self._clear_airllm_path)
@@ -215,13 +213,13 @@ class SettingsTab(QWidget):
         status_card_layout.setSpacing(8)
 
         req_row = QHBoxLayout()
-        self.system_status_btn = QPushButton("🔍 Check System Requirements")
+        self.system_status_btn = QPushButton(f"🔍 {t('settings.check_requirements', 'Check System Requirements')}")
         self.system_status_btn.setObjectName("GhostBtn")
         self.system_status_btn.setFixedHeight(32)
         self.system_status_btn.clicked.connect(self._check_system_requirements)
         req_row.addWidget(self.system_status_btn)
 
-        self.install_airllm_btn = QPushButton("⬇️ Install AirLLM")
+        self.install_airllm_btn = QPushButton(f"⬇️ {t('settings.install_airllm', 'Install AirLLM')}")
         self.install_airllm_btn.setObjectName("SuccessBtn")
         self.install_airllm_btn.setFixedHeight(32)
         self.install_airllm_btn.setVisible(False)
@@ -241,7 +239,7 @@ class SettingsTab(QWidget):
         layout.addWidget(airllm_group)
 
         # === AI Behavior ===
-        ai_group = QGroupBox("  AI Behavior")
+        ai_group = QGroupBox(f"  {t('settings.ai_behavior', 'AI Behavior')}")
         ai_layout = QVBoxLayout(ai_group)
         ai_layout.setSpacing(10)
 
@@ -252,13 +250,13 @@ class SettingsTab(QWidget):
         prompt_card_layout.setContentsMargins(12, 10, 12, 10)
         prompt_card_layout.setSpacing(8)
 
-        prompt_label = QLabel("System Prompt:")
+        prompt_label = QLabel(t("settings.sys_prompt", "System Prompt:"))
         prompt_label.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
         prompt_card_layout.addWidget(prompt_label)
 
         self.system_prompt_input = QTextEdit()
         self.system_prompt_input.setMaximumHeight(80)
-        self.system_prompt_input.setPlaceholderText("You are a helpful assistant.")
+        self.system_prompt_input.setPlaceholderText(t("chat.prompt_placeholder", "You are a helpful assistant."))
         self.system_prompt_input.setStyleSheet("""
             QTextEdit {
                 background-color: rgba(15,15,23,0.6);
@@ -271,7 +269,7 @@ class SettingsTab(QWidget):
         prompt_card_layout.addWidget(self.system_prompt_input)
 
         # File ops toggle
-        self.file_ops_check = QCheckBox("Enable AI file operations (create, edit, move files)")
+        self.file_ops_check = QCheckBox(t("settings.file_ops", "Allow AI to create and modify files"))
         self.file_ops_check.setStyleSheet("font-size: 12px;")
         prompt_card_layout.addWidget(self.file_ops_check)
 
@@ -280,7 +278,7 @@ class SettingsTab(QWidget):
         layout.addWidget(ai_group)
 
         # === Generation Parameters ===
-        gen_group = QGroupBox("  Generation Parameters")
+        gen_group = QGroupBox(f"  {t('settings.generation_parameters', 'Generation Parameters')}")
         gen_layout = QVBoxLayout(gen_group)
 
         gen_card = QFrame()
@@ -291,7 +289,7 @@ class SettingsTab(QWidget):
 
         # Max tokens
         tokens_layout = QHBoxLayout()
-        tokens_lbl = QLabel("Max tokens:")
+        tokens_lbl = QLabel(t("settings.max_tokens", "Max tokens:"))
         tokens_lbl.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
         tokens_layout.addWidget(tokens_lbl)
 
@@ -305,7 +303,7 @@ class SettingsTab(QWidget):
 
         # Temperature
         temp_layout = QHBoxLayout()
-        temp_lbl = QLabel("Temperature:")
+        temp_lbl = QLabel(t("settings.temperature", "Temperature:"))
         temp_lbl.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
         temp_layout.addWidget(temp_lbl)
 
@@ -316,7 +314,7 @@ class SettingsTab(QWidget):
         self.temperature_spin.setFixedWidth(80)
         temp_layout.addWidget(self.temperature_spin)
 
-        temp_hint = QLabel("0 = deterministic  •  2 = creative")
+        temp_hint = QLabel(t("settings.temp_hint", "0 = deterministic  •  2 = creative"))
         temp_hint.setStyleSheet("color: #45475a; font-size: 10px;")
         temp_layout.addWidget(temp_hint)
         temp_layout.addStretch()

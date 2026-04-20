@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt, QThread, Signal
 from PySide6.QtGui import QFont, QColor
 
 from ..utils.config import Config
+from src.utils.i18n import t
 from ..backends.ollama_backend import OllamaBackend
 from ..backends.lmstudio_backend import LMStudioBackend
 

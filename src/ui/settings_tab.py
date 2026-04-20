@@ -43,8 +43,8 @@ class SettingsTab(QWidget):
         layout.setContentsMargins(0, 0, 12, 0)
 
         # === Download Backend ===
-        download_group = QGroupBox(f"  {t('settings.download_backend', 'Download Backend')}")
-        download_layout = QVBoxLayout(download_group)
+        self.download_group = QGroupBox(f"  {t('settings.download_backend', 'Download Backend')}")
+        download_layout = QVBoxLayout(self.download_group)
         download_layout.setSpacing(10)
 
         self.backend_group = QButtonGroup(self)
@@ -61,9 +61,9 @@ class SettingsTab(QWidget):
         self.backend_group.addButton(self.ollama_radio)
         ollama_card_layout.addWidget(self.ollama_radio)
 
-        url_label1 = QLabel("URL:")
-        url_label1.setStyleSheet("color: #6c7086; font-size: 11px;")
-        ollama_card_layout.addWidget(url_label1)
+        self.ollama_url_lbl = QLabel("URL:")
+        self.ollama_url_lbl.setStyleSheet("color: #6c7086; font-size: 11px;")
+        ollama_card_layout.addWidget(self.ollama_url_lbl)
 
         self.ollama_url_input = QLineEdit()
         self.ollama_url_input.setPlaceholderText("http://localhost:11434")
@@ -83,9 +83,9 @@ class SettingsTab(QWidget):
         self.backend_group.addButton(self.lmstudio_radio)
         lmstudio_card_layout.addWidget(self.lmstudio_radio)
 
-        url_label2 = QLabel("URL:")
-        url_label2.setStyleSheet("color: #6c7086; font-size: 11px;")
-        lmstudio_card_layout.addWidget(url_label2)
+        self.lmstudio_url_lbl = QLabel("URL:")
+        self.lmstudio_url_lbl.setStyleSheet("color: #6c7086; font-size: 11px;")
+        lmstudio_card_layout.addWidget(self.lmstudio_url_lbl)
 
         self.lmstudio_url_input = QLineEdit()
         self.lmstudio_url_input.setPlaceholderText("http://localhost:1234")
@@ -93,11 +93,11 @@ class SettingsTab(QWidget):
 
         download_layout.addWidget(lmstudio_card)
 
-        layout.addWidget(download_group)
+        layout.addWidget(self.download_group)
 
         # === AirLLM ===
-        airllm_group = QGroupBox(f"  {t('settings.airllm_title', 'AirLLM — Optimized Execution')}")
-        airllm_layout = QVBoxLayout(airllm_group)
+        self.airllm_group = QGroupBox(f"  {t('settings.airllm_title', 'AirLLM — Optimized Execution')}")
+        airllm_layout = QVBoxLayout(self.airllm_group)
         airllm_layout.setSpacing(10)
 
         # Compression
@@ -106,9 +106,9 @@ class SettingsTab(QWidget):
         compression_layout = QHBoxLayout(compression_card)
         compression_layout.setContentsMargins(12, 10, 12, 10)
 
-        comp_label = QLabel(t("settings.compression", "Compression:"))
-        comp_label.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
-        compression_layout.addWidget(comp_label)
+        self.comp_label = QLabel(t("settings.compression", "Compression:"))
+        self.comp_label.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
+        compression_layout.addWidget(self.comp_label)
 
         self.compression_combo = QComboBox()
         self.compression_combo.addItem(t("settings.comp_4bit", "4-bit (Recommended)"), "4bit")
@@ -125,9 +125,9 @@ class SettingsTab(QWidget):
         ctx_layout = QHBoxLayout(ctx_card)
         ctx_layout.setContentsMargins(12, 10, 12, 10)
 
-        ctx_label = QLabel(t("settings.context_size", "Internal Context (n_ctx):"))
-        ctx_label.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
-        ctx_layout.addWidget(ctx_label)
+        self.ctx_label = QLabel(t("settings.context_size", "Internal Context (n_ctx):"))
+        self.ctx_label.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
+        ctx_layout.addWidget(self.ctx_label)
 
         self.airllm_ctx_spin = QSpinBox()
         self.airllm_ctx_spin.setRange(0, 1048576)
@@ -144,18 +144,18 @@ class SettingsTab(QWidget):
         """)
         ctx_layout.addWidget(self.airllm_ctx_spin)
 
-        ctx_hint = QLabel(t("settings.context_hint", "0 = Auto (Use model max capacity, uses more RAM)"))
-        ctx_hint.setStyleSheet("color: #45475a; font-size: 10px;")
-        ctx_layout.addWidget(ctx_hint)
+        self.ctx_hint = QLabel(t("settings.context_hint", "0 = Auto (Use model max capacity, uses more RAM)"))
+        self.ctx_hint.setStyleSheet("color: #45475a; font-size: 10px;")
+        ctx_layout.addWidget(self.ctx_hint)
         ctx_layout.addStretch()
 
         airllm_layout.addWidget(ctx_card)
 
         # Path help
-        path_help = QLabel(t("settings.packages_help", "If the app can't find AirLLM, point to the site-packages folder where pip installed the package. You can also select the virtual environment root."))
-        path_help.setWordWrap(True)
-        path_help.setStyleSheet("color: #6c7086; font-size: 11px; padding: 4px 8px;")
-        airllm_layout.addWidget(path_help)
+        self.path_help = QLabel(t("settings.packages_help", "If the app can't find AirLLM, point to the site-packages folder where pip installed the package. You can also select the virtual environment root."))
+        self.path_help.setWordWrap(True)
+        self.path_help.setStyleSheet("color: #6c7086; font-size: 11px; padding: 4px 8px;")
+        airllm_layout.addWidget(self.path_help)
 
         # Path row
         path_card = QFrame()
@@ -165,9 +165,9 @@ class SettingsTab(QWidget):
         path_card_layout.setSpacing(8)
 
         path_row = QHBoxLayout()
-        path_lbl = QLabel(t("settings.airllm_folder", "AirLLM Folder:"))
-        path_lbl.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
-        path_row.addWidget(path_lbl)
+        self.airllm_path_lbl = QLabel(t("settings.airllm_folder", "AirLLM Folder:"))
+        self.airllm_path_lbl.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
+        path_row.addWidget(self.airllm_path_lbl)
 
         self.airllm_path_input = QLineEdit()
         self.airllm_path_input.setPlaceholderText("E.g.: C:\\…\\venv\\Lib\\site-packages")
@@ -189,11 +189,11 @@ class SettingsTab(QWidget):
         self.airllm_autodetect_btn.clicked.connect(self._auto_detect_airllm)
         btn_row.addWidget(self.airllm_autodetect_btn)
 
-        self.airllm_clear_path_btn = QPushButton(t("settings.clear", "Clear"))
-        self.airllm_clear_path_btn.setObjectName("GhostBtn")
-        self.airllm_clear_path_btn.setFixedHeight(30)
-        self.airllm_clear_path_btn.clicked.connect(self._clear_airllm_path)
-        btn_row.addWidget(self.airllm_clear_path_btn)
+        self.airllm_clear_btn = QPushButton(t("settings.clear", "Clear"))
+        self.airllm_clear_btn.setObjectName("GhostBtn")
+        self.airllm_clear_btn.setFixedHeight(30)
+        self.airllm_clear_btn.clicked.connect(self._clear_airllm_path)
+        btn_row.addWidget(self.airllm_clear_btn)
 
         btn_row.addStretch()
         path_card_layout.addLayout(btn_row)
@@ -236,11 +236,11 @@ class SettingsTab(QWidget):
 
         airllm_layout.addWidget(status_card)
 
-        layout.addWidget(airllm_group)
+        layout.addWidget(self.airllm_group)
 
         # === AI Behavior ===
-        ai_group = QGroupBox(f"  {t('settings.ai_behavior', 'AI Behavior')}")
-        ai_layout = QVBoxLayout(ai_group)
+        self.ai_group = QGroupBox(f"  {t('settings.ai_behavior', 'AI Behavior')}")
+        ai_layout = QVBoxLayout(self.ai_group)
         ai_layout.setSpacing(10)
 
         # System prompt
@@ -250,9 +250,9 @@ class SettingsTab(QWidget):
         prompt_card_layout.setContentsMargins(12, 10, 12, 10)
         prompt_card_layout.setSpacing(8)
 
-        prompt_label = QLabel(t("settings.sys_prompt", "System Prompt:"))
-        prompt_label.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
-        prompt_card_layout.addWidget(prompt_label)
+        self.sys_prompt_lbl = QLabel(t("settings.sys_prompt", "System Prompt:"))
+        self.sys_prompt_lbl.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
+        prompt_card_layout.addWidget(self.sys_prompt_lbl)
 
         self.system_prompt_input = QTextEdit()
         self.system_prompt_input.setMaximumHeight(80)
@@ -275,11 +275,11 @@ class SettingsTab(QWidget):
 
         ai_layout.addWidget(prompt_card)
 
-        layout.addWidget(ai_group)
+        layout.addWidget(self.ai_group)
 
         # === Generation Parameters ===
-        gen_group = QGroupBox(f"  {t('settings.generation_parameters', 'Generation Parameters')}")
-        gen_layout = QVBoxLayout(gen_group)
+        self.gen_group = QGroupBox(f"  {t('settings.generation_parameters', 'Generation Parameters')}")
+        gen_layout = QVBoxLayout(self.gen_group)
 
         gen_card = QFrame()
         gen_card.setObjectName("Card")
@@ -289,9 +289,9 @@ class SettingsTab(QWidget):
 
         # Max tokens
         tokens_layout = QHBoxLayout()
-        tokens_lbl = QLabel(t("settings.max_tokens", "Max tokens:"))
-        tokens_lbl.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
-        tokens_layout.addWidget(tokens_lbl)
+        self.max_tokens_lbl = QLabel(t("settings.max_tokens", "Max tokens:"))
+        self.max_tokens_lbl.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
+        tokens_layout.addWidget(self.max_tokens_lbl)
 
         self.max_tokens_spin = QSpinBox()
         self.max_tokens_spin.setRange(1, 4096)
@@ -303,9 +303,9 @@ class SettingsTab(QWidget):
 
         # Temperature
         temp_layout = QHBoxLayout()
-        temp_lbl = QLabel(t("settings.temperature", "Temperature:"))
-        temp_lbl.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
-        temp_layout.addWidget(temp_lbl)
+        self.temp_lbl = QLabel(t("settings.temperature", "Temperature:"))
+        self.temp_lbl.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
+        temp_layout.addWidget(self.temp_lbl)
 
         self.temperature_spin = QDoubleSpinBox()
         self.temperature_spin.setRange(0.0, 2.0)
@@ -322,11 +322,11 @@ class SettingsTab(QWidget):
 
         gen_layout.addWidget(gen_card)
 
-        layout.addWidget(gen_group)
+        layout.addWidget(self.gen_group)
 
         # === Appearance ===
-        appearance_group = QGroupBox(f"  {t('settings.appearance', 'Appearance')}")
-        appearance_layout = QVBoxLayout(appearance_group)
+        self.appearance_group = QGroupBox(f"  {t('settings.appearance', 'Appearance')}")
+        appearance_layout = QVBoxLayout(self.appearance_group)
 
         appearance_card = QFrame()
         appearance_card.setObjectName("Card")
@@ -336,9 +336,9 @@ class SettingsTab(QWidget):
 
         # Theme
         theme_row = QHBoxLayout()
-        theme_lbl = QLabel(t("settings.theme", "Theme:"))
-        theme_lbl.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
-        theme_row.addWidget(theme_lbl)
+        self.theme_lbl = QLabel(t("settings.theme", "Theme:"))
+        self.theme_lbl.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
+        theme_row.addWidget(self.theme_lbl)
 
         self.theme_combo = QComboBox()
         self.theme_combo.addItem(f"🌙 {t('settings.dark', 'Dark')}", "dark")
@@ -350,9 +350,9 @@ class SettingsTab(QWidget):
 
         # Language
         lang_row = QHBoxLayout()
-        lang_lbl = QLabel(t("settings.language", "Language:"))
-        lang_lbl.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
-        lang_row.addWidget(lang_lbl)
+        self.lang_lbl = QLabel(t("settings.language", "Language:"))
+        self.lang_lbl.setStyleSheet("color: #6c7086; font-size: 12px; font-weight: bold;")
+        lang_row.addWidget(self.lang_lbl)
 
         self.lang_combo = QComboBox()
         self.lang_combo.addItem("🇺🇸 English", "en")
@@ -364,7 +364,7 @@ class SettingsTab(QWidget):
 
         appearance_layout.addWidget(appearance_card)
 
-        layout.addWidget(appearance_group)
+        layout.addWidget(self.appearance_group)
 
         # === Action Buttons ===
         buttons_layout = QHBoxLayout()
@@ -507,15 +507,19 @@ class SettingsTab(QWidget):
         self.download_group.setTitle(f"  {t('settings.download_backend', 'Download Backend')}")
         self.ollama_radio.setText(t("download.ollama", "Ollama"))
         self.ollama_radio.setToolTip(t("settings.ollama_tip", "Downloads models from the Ollama registry"))
+        self.ollama_url_lbl.setText(t("settings.url", "URL:"))
+        
         self.lmstudio_radio.setText(t("download.lmstudio", "LMStudio"))
         self.lmstudio_radio.setToolTip(t("settings.lmstudio_tip", "Downloads GGUF models from HuggingFace"))
+        self.lmstudio_url_lbl.setText(t("settings.url", "URL:"))
         
         self.airllm_group.setTitle(f"  {t('settings.airllm_title', 'AirLLM — Optimized Execution')}")
         self.comp_label.setText(t("settings.compression", "Compression:"))
         
-        # Combo items are harder to update without clearing, but let's try just the title for now
         self.ctx_label.setText(t("settings.context_size", "Internal Context (n_ctx):"))
-        self.path_help.setText(t("settings.packages_help", "If the app can't find AirLLM..."))
+        self.ctx_hint.setText(t("settings.context_hint", "0 = Auto (Use model max capacity, uses more RAM)"))
+        
+        self.path_help.setText(t("settings.packages_help", "If the app can't find AirLLM, point to the site-packages folder where pip installed the package. You can also select the virtual environment root."))
         self.airllm_path_lbl.setText(t("settings.airllm_folder", "AirLLM Folder:"))
         self.airllm_browse_btn.setText(f"📁 {t('settings.browse', 'Browse…')}")
         self.airllm_autodetect_btn.setText(f"🔎 {t('settings.autodetect', 'Auto-detect')}")
@@ -524,14 +528,13 @@ class SettingsTab(QWidget):
         self.install_airllm_btn.setText(f"⬇️ {t('settings.install_airllm', 'Install AirLLM')}")
         
         self.ai_group.setTitle(f"  {t('settings.ai_behavior', 'AI Behavior')}")
-        self.sys_prompt_lbl.setText(t("settings.sys_prompt", "System Prompt"))
-        self.system_prompt_input.setPlaceholderText(t("chat.prompt_placeholder", "Type your message here..."))
+        self.sys_prompt_lbl.setText(t("settings.sys_prompt", "System Prompt:"))
+        self.system_prompt_input.setPlaceholderText(t("chat.prompt_placeholder", "You are a helpful assistant."))
         self.file_ops_check.setText(t("settings.file_ops", "Allow AI to create and modify files"))
         
         self.gen_group.setTitle(f"  {t('settings.generation_parameters', 'Generation Parameters')}")
         self.max_tokens_lbl.setText(t("settings.max_tokens", "Max tokens:"))
         self.temp_lbl.setText(t("settings.temperature", "Temperature:"))
-        # self.temp_hint.setText(t("settings.temp_hint", "..."))
         
         self.appearance_group.setTitle(f"  {t('settings.appearance', 'Appearance')}")
         self.theme_lbl.setText(t("settings.theme", "Theme:"))

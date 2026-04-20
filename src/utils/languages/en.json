@@ -148,6 +148,22 @@
     "success": "Success",
     "success_msg": "Settings saved successfully!",
     "warning": "Warning",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "install_title": "Install Dependencies",
+    "install_now": "Install Now",
+    "cancel": "Cancel",
+    "waiting": "Waiting…",
+    "starting": "Starting…",
+    "downloading": "Downloading…",
+    "complete": "Complete!",
+    "failed": "Failed",
+    "try_again": "Try Again",
+    "ready": "Ready to install.",
+    "starting_pip": "Starting pip install…",
+    "packages": "Packages:",
+    "airllm_install_title": "Install AirLLM",
+    "airllm_install_desc": "The AirLLM package was not found in the current Python environment.\nDo you want to download and install it now? (Requires internet connection)",
+    "llama_install_title": "Install llama-cpp-python",
+    "llama_install_desc": "The llama-cpp-python package is required to run GGUF models.\nDo you want to download and install it now? (Requires internet connection)\n\n⚠️ Compilation may take a few minutes."
   }
 }

@@ -12,6 +12,7 @@ import subprocess
 
 from ..utils.config import Config
 from ..utils.extensions import ExtensionManager
+from src.utils.i18n import t
 
 class ExtensionsTab(QWidget):
     """Tab to view and manage extensions."""

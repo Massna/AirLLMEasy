@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
 
 from ..utils.pip_installer import PipInstallWorker, is_frozen
 from ..utils.airllm_import import set_airllm_packages_path
+from src.utils.i18n import t
 
 
 class InstallDialog(QDialog):
@@ -105,7 +106,7 @@ class InstallDialog(QDialog):
 
         # Package list
         pkg_text = ", ".join(self.packages)
-        pkg_lbl = QLabel(f"<b>Packages:</b> {pkg_text}")
+        pkg_lbl = QLabel(f"<b>{t('dialogs.packages', 'Packages:')}</b> {pkg_text}")
         pkg_lbl.setWordWrap(True)
         pkg_lbl.setStyleSheet("font-size: 12px;")
         root.addWidget(pkg_lbl)
@@ -115,7 +116,7 @@ class InstallDialog(QDialog):
         self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
         self.progress_bar.setTextVisible(True)
-        self.progress_bar.setFormat("Waiting…")
+        self.progress_bar.setFormat(t("dialogs.waiting", "Waiting…"))
         self.progress_bar.setMinimumHeight(28)
         self.progress_bar.setStyleSheet(
             """
@@ -139,7 +140,7 @@ class InstallDialog(QDialog):
         root.addWidget(self.progress_bar)
 
         # Detailed status label
-        self.status_label = QLabel("Ready to install.")
+        self.status_label = QLabel(t("dialogs.ready", "Ready to install."))
         self.status_label.setWordWrap(True)
         self.status_label.setStyleSheet("color: #bac2de; font-size: 12px;")
         root.addWidget(self.status_label)
@@ -148,11 +149,11 @@ class InstallDialog(QDialog):
         btn_row = QHBoxLayout()
         btn_row.addStretch()
 
-        self.cancel_btn = QPushButton("Cancel")
+        self.cancel_btn = QPushButton(t("dialogs.cancel", "Cancel"))
         self.cancel_btn.clicked.connect(self._on_cancel)
         btn_row.addWidget(self.cancel_btn)
 
-        self.install_btn = QPushButton("⬇️ Install Now")
+        self.install_btn = QPushButton(f"⬇️ {t('dialogs.install_now', 'Install Now')}")
         self.install_btn.setMinimumWidth(140)
         self.install_btn.setStyleSheet(
             """
@@ -183,8 +184,8 @@ class InstallDialog(QDialog):
         self._installing = True
         self.install_btn.setEnabled(False)
         self.progress_bar.setRange(0, 0)  # indeterminate
-        self.progress_bar.setFormat("Starting…")
-        self.status_label.setText("Starting pip install…")
+        self.progress_bar.setFormat(t("dialogs.starting", "Starting…"))
+        self.status_label.setText(t("dialogs.starting_pip", "Starting pip install…"))
 
         self._worker = PipInstallWorker(
             self.packages,
@@ -205,7 +206,7 @@ class InstallDialog(QDialog):
         if pct < 0:
             # indeterminate
             self.progress_bar.setRange(0, 0)
-            self.progress_bar.setFormat("Downloading…")
+            self.progress_bar.setFormat(t("dialogs.downloading", "Downloading…"))
         else:
             self.progress_bar.setRange(0, 100)
             self.progress_bar.setValue(pct)
@@ -233,7 +234,7 @@ class InstallDialog(QDialog):
 
         if ok:
             self.progress_bar.setValue(100)
-            self.progress_bar.setFormat("✅ Complete!")
+            self.progress_bar.setFormat(t("dialogs.complete", "Complete!"))
             self.progress_bar.setStyleSheet(
                 """
                 QProgressBar {
@@ -261,7 +262,7 @@ class InstallDialog(QDialog):
 
             self.status_label.setText(final_msg)
             self.status_label.setStyleSheet("color: #a6e3a1; font-size: 12px;")
-            self.cancel_btn.setText("Close")
+            self.cancel_btn.setText(t("chat.close", "Close"))
 
             if self._on_success:
                 self._on_success()
@@ -270,7 +271,7 @@ class InstallDialog(QDialog):
             QTimer.singleShot(1500, self.accept)
         else:
             self.progress_bar.setValue(0)
-            self.progress_bar.setFormat("❌ Failed")
+            self.progress_bar.setFormat(t("dialogs.failed", "Failed"))
             self.progress_bar.setStyleSheet(
                 """
                 QProgressBar {
@@ -290,7 +291,7 @@ class InstallDialog(QDialog):
             self.status_label.setText(message)
             self.status_label.setStyleSheet("color: #f38ba8; font-size: 12px;")
             self.install_btn.setEnabled(True)
-            self.install_btn.setText("🔄 Try Again")
+            self.install_btn.setText(f"🔄 {t('dialogs.try_again', 'Try Again')}")
 
     def _on_cancel(self):
         if self._installing and self._worker:
@@ -323,11 +324,8 @@ def prompt_install_airllm(parent: Optional[QWidget] = None) -> bool:
             "transformers>=4.40.0,<4.49.0",
             "huggingface_hub>=0.20.0",
         ],
-        title="Install AirLLM",
-        description=(
-            "The AirLLM package was not found in the current Python environment.\n"
-            "Do you want to download and install it now? (Requires internet connection)"
-        ),
+        title=t("dialogs.airllm_install_title", "Install AirLLM"),
+        description=t("dialogs.airllm_install_desc", "The AirLLM package was not found..."),
         parent=parent,
     )
     result = dlg.exec() == QDialog.Accepted
@@ -343,12 +341,8 @@ def prompt_install_llama_cpp(parent: Optional[QWidget] = None) -> bool:
     """Show dialog to install llama-cpp-python. Returns True if installed."""
     dlg = InstallDialog(
         packages=["llama-cpp-python>=0.2.0"],
-        title="Install llama-cpp-python",
-        description=(
-            "The llama-cpp-python package is required to run GGUF models.\n"
-            "Do you want to download and install it now? (Requires internet connection)\n\n"
-            "⚠️ Compilation may take a few minutes."
-        ),
+        title=t("dialogs.llama_install_title", "Install llama-cpp-python"),
+        description=t("dialogs.llama_install_desc", "The llama-cpp-python package is required to run GGUF models.\nDo you want to download and install it now? (Requires internet connection)\n\n⚠️ Compilation may take a few minutes."),
         parent=parent,
     )
     result = dlg.exec() == QDialog.Accepted
